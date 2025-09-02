@@ -1,0 +1,5 @@
+# zig related
+zig-out
+.zig-cache
+
+# temps
