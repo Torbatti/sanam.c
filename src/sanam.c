@@ -28,18 +28,30 @@
 */
 
 /*
- * VERSION: UNTRACKED
-*/
-
-/*
  * DOCUMENTATION:
  *
 */
 
+/*
+ * Sanam layers:
+ * 
+ * Platform agnostic file/dir
+ * 
+ * Platform specefic event loop
+ * 
+ * Yaml parser
+ * https://yaml.org/spec/1.2.2/
+ *
+ * CommonMark parser/renderer
+ * https://spec.commonmark.org/0.31.2/
+ *
+*/
+
+char SANAM_VERSION = "UNTRACKED";
+
 int
 main(int argc, char *argv[])
 {
- 
 }
 
 /*
