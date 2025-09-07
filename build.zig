@@ -34,7 +34,9 @@ pub fn build(b: *std.Build) void {
         }),
     });
 
-    exe.addCSourceFile(.{ .file = b.path("src/sanam.c") });
+    const default_c_flags = [_][]const u8{ "-std=c89", "-Wall", "-Werr", "-pedantic" };
+
+    exe.addCSourceFile(.{ .file = b.path("src/sanam.c"), .flags = &default_c_flags });
 
     //
     switch (target.result.os.tag) {
