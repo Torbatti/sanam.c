@@ -49,24 +49,17 @@
 char SANAM_VERSION[] = "UNTRACKED";
 
 /*
- * Os specific Includes
+ * Includes
  *
  *
  *
  */
 
-#ifdef _WIN32 /* Both 32 bit and 64 bit */
-
-#  include <Windows.h>
-#  include <stdio.h>
-
-#endif /* _WIN32 */
-
-#ifdef __linux__
-#endif /* __linux__ */
-
-#ifdef __MACH__
-#endif /* __MACH__ */
+#include <sys/stat.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <errno.h>
 
 /*
  * Memmory related
@@ -114,79 +107,112 @@ mem_free(void *mem_pointer)
  *
  */
 
-static int
-file_open(FILE **ptrfile, const char *name, const char *mode)
+typedef struct Io_File {
+  unsigned int fd;
+  unsigned int pos;
+} Io_File;
+
+int
+file_open(Io_File *file, const char *path, int flags)
 {
-  *ptrfile = fopen(name, mode);
-  if(ptrfile == NULL)
+  int open_resault = open(path, flags);
+  if(open_resault == -1)
   {
     return -1;
   }
+
+  file->fd  = (unsigned int)open_resault;
+  file->pos = 0;
+
   return 0;
 }
 
-/* NOTE(AABIB): better api interface i guess? */
-static int
-file_readByte(FILE *ptrfile)
+int
+file_readByte(Io_File *file)
 {
-  int fgetc_resault = fgetc(ptrfile);
-  return fgetc_resault;
+  char buf[1];
+  int  read_resault = read(file->fd, buf, 1);
+  if(read_resault == -1)
+  {
+    printf("errno: %d", errno);
+    return -1;
+  }
+
+  file->pos = file->pos + read_resault;
+
+  return buf[0];
 }
 
-/* TODO(AABIB): Better errors handling */
-static long
-file_readBytes(FILE *ptrfile, char *ptrbuff, int max_read)
+int
+file_readBytes(Io_File *file, char *buf, int max_read)
 {
-  long startpos = ftell(ptrfile);
-  if(startpos == -1)
+  int read_resault = read(file->fd, buf, max_read);
+  if(read_resault == -1)
+  {
+    printf("errno: %d", errno);
+    return -1;
+  }
+
+  file->pos = file->pos + read_resault;
+
+  return read_resault;
+}
+
+long int
+file_size(Io_File *file)
+{
+  struct stat file_stat;
+
+  int fstat_resault = fstat(file->fd, &file_stat);
+  if(fstat_resault == -1)
   {
     return -1;
   }
 
-  char *fgets_resault = fgets(ptrbuff, max_read, ptrfile);
-  /* TODO(AABIB): Handle errors */
-  /* fgets_resault == null and errno is set */
-  /*
-  // if(!fgets_resault)
-  // {
-  //   return -1;
-  // }
-  */
+  return file_stat.st_size;
+}
 
-  long endpos = ftell(ptrfile);
-  if(endpos == -1)
+int
+file_close(Io_File *file)
+{
+  int close_resault = close(file->fd);
+  if(close_resault == -1)
   {
     return -1;
   }
 
-  /* + 1 is not needed , endpos hasnt been read yet*/
-  long read_len = endpos - startpos;
-  return read_len;
-}
-
-/*
-static int
-file_read()
-{}
-*/
-
-static int
-file_close(FILE *ptrfile)
-{
-  int fclose_resault = fclose(ptrfile);
-
-  /* returns 0 on success*/
-  if(fclose_resault == 0)
-  {
-    return 0;
-  }
-  return -1;
+  file->fd  = 0;
+  file->pos = 0;
+  return 0;
 }
 
 /*
  * Directory related
  *
  */
+
+/*
+static int
+dir_open(DIR **ptrdir, const char *path)
+{
+ ptrdir = opendir(path);
+ if(folder == NULL)
+ {
+   puts("Unable to read directory");
+   return (1);
+ }
+ else
+ {
+   puts("Directory is opened!");
+ }
+}
+
+static int
+dir_close(DIR *ptrdir)
+{
+  closedir(dir);
+}
+*/
 
 /*
  * Event loop
@@ -327,38 +353,7 @@ struct md_Token {
 int
 main(int argc, char *argv[])
 {
-  char buff[2048];
 
-  FILE *file        = NULL;
-  char  file_name[] = "test.md";
-  char  file_mode[] = "r";
-
-  int fileopen_resault = file_open(&file, "test.md", file_mode);
-
-  if(fileopen_resault == -1)
-  {
-    printf("Unable to open file %s\n", file_name);
-    return -1;
-  }
-
-  while(1)
-  {
-    char *fgets_resault = fgets(buff, 2048, file);
-    if(fgets_resault == NULL)
-    {
-      break;
-    }
-    printf("%s", buff);
-  }
-
-  int fileclose_resault = file_close(file);
-  if(fileopen_resault == -1)
-  {
-    printf("Unable to close file %s\n", file_name);
-    return -1;
-  }
-
-  return 0;
 }
 
 /*
