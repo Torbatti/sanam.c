@@ -58,6 +58,7 @@ char SANAM_VERSION[] = "UNTRACKED";
 #include <sys/stat.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <dirent.h>
 #include <fcntl.h>
 #include <errno.h>
 
@@ -102,17 +103,9 @@ mem_free(void *mem_pointer)
 }
 */
 
-/*
- * File related
- *
- */
+typedef unsigned int Io_File;
 
-typedef struct Io_File {
-  unsigned int fd;
-  unsigned int pos;
-} Io_File;
-
-int
+static int
 file_open(Io_File *file, const char *path, int flags)
 {
   int open_resault = open(path, flags);
@@ -121,49 +114,59 @@ file_open(Io_File *file, const char *path, int flags)
     return -1;
   }
 
-  file->fd  = (unsigned int)open_resault;
-  file->pos = 0;
+  *file = (unsigned int)open_resault;
 
   return 0;
 }
 
-int
+static int
 file_readByte(Io_File *file)
 {
   char buf[1];
-  int  read_resault = read(file->fd, buf, 1);
+  int  read_resault = read(*file, buf, 1);
   if(read_resault == -1)
   {
     printf("errno: %d", errno);
     return -1;
   }
-
-  file->pos = file->pos + read_resault;
 
   return buf[0];
 }
 
-int
+// TODO(AABIB): should user buf[0] or buf[1] for a single char array?????
+// static int
+// file_readByte(Io_File *file, char buf[0])
+// {
+//   char buf[1];
+//   int  read_resault = read(*file, buf, 1);
+//   if(read_resault == -1)
+//   {
+//     printf("errno: %d", errno);
+//     return -1;
+//   }
+
+//   return buf[0];
+// }
+
+static int
 file_readBytes(Io_File *file, char *buf, int max_read)
 {
-  int read_resault = read(file->fd, buf, max_read);
+  int read_resault = read(*file, buf, max_read);
   if(read_resault == -1)
   {
     printf("errno: %d", errno);
     return -1;
   }
 
-  file->pos = file->pos + read_resault;
-
   return read_resault;
 }
 
-long int
+static long
 file_size(Io_File *file)
 {
   struct stat file_stat;
 
-  int fstat_resault = fstat(file->fd, &file_stat);
+  int fstat_resault = fstat(*file, &file_stat);
   if(fstat_resault == -1)
   {
     return -1;
@@ -172,47 +175,45 @@ file_size(Io_File *file)
   return file_stat.st_size;
 }
 
-int
+static int
 file_close(Io_File *file)
 {
-  int close_resault = close(file->fd);
+  int close_resault = close(*file);
   if(close_resault == -1)
   {
     return -1;
   }
 
-  file->fd  = 0;
-  file->pos = 0;
+  *file = 0;
   return 0;
 }
 
-/*
- * Directory related
- *
- */
+typedef DIR Io_Dir;
 
-/*
 static int
-dir_open(DIR **ptrdir, const char *path)
+dir_open(Io_Dir *dir, const char *path)
 {
- ptrdir = opendir(path);
- if(folder == NULL)
- {
-   puts("Unable to read directory");
-   return (1);
- }
- else
- {
-   puts("Directory is opened!");
- }
+  dir = opendir(path);
+  if(dir == NULL)
+  {
+    return -1;
+  }
+  else
+  {
+    return 0;
+  }
 }
 
 static int
-dir_close(DIR *ptrdir)
+dir_close(Io_Dir *dir)
 {
-  closedir(dir);
+  int close_resault = closedir(dir);
+  if(close_resault == -1)
+  {
+    return -1;
+  }
+  return 0;
 }
-*/
 
 /*
  * Event loop
@@ -239,18 +240,9 @@ typedef struct utf8_Reader {
   unsigned char *buffer;
 } utf8_Reader;
 
-typedef struct {
-  int       err;
-  utf8_Rune rune;
-} utf8_Rune_Error;
-
-utf8_Rune_Error
-utf8_readChar(utf8_Reader *reader)
+static int
+utf8_readChar(utf8_Reader *reader, utf8_Rune *rune)
 {
-  utf8_Rune_Error return_rune_err;
-  return_rune_err.rune = 0;
-  return_rune_err.err  = 0;
-
   unsigned char utf8_byte       = 0;
   unsigned int  utf8_rune       = 0;
   unsigned char utf8_rune_len   = 0;
@@ -294,9 +286,8 @@ utf8_readChar(utf8_Reader *reader)
       /* NOTE(AABIB): This shouldnt have happened */
       if(utf8_rune_len == 0)
       {
-        return_rune_err.rune = 0;
-        return_rune_err.err  = -1;
-        return return_rune_err;
+        *rune = 0;
+        return -1;
       }
     }
 
@@ -348,13 +339,9 @@ struct md_Token {
   unsigned int start_pos;
 };
 
-#include <stdio.h>
-
 int
 main(int argc, char *argv[])
-{
-
-}
+{}
 
 /*
  * CHANGELOG:
