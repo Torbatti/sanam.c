@@ -10,11 +10,6 @@ set release_exe_name=sanam
 set build_debug= 1
 set build_release= 0
 
-:: available debugger procs | raddbg is default
-set debug_raddbg= 1
-set debug_gdb= 1
-set debug_ldb= 1
-
 :: available formatter procs | clang-fmt is default
 set clang_fmt= 1
 
