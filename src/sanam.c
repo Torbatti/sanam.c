@@ -63,11 +63,6 @@ char SANAM_VERSION[] = "UNTRACKED";
 #include <errno.h>
 
 /*
- * Memmory related
- *
- */
-
-/*
 static int
 mem_alloc(void *mem_pointer, unsigned int mem_size)
 {
@@ -198,10 +193,18 @@ dir_open(Io_Dir *dir, const char *path)
   {
     return -1;
   }
-  else
+  return 0;
+}
+
+static int
+dir_read(Io_Dir *dir, struct dirent *entry)
+{
+  entry = readdir(dir);
+  if(entry == NULL)
   {
-    return 0;
+    return -1;
   }
+  return 0;
 }
 
 static int
@@ -214,24 +217,6 @@ dir_close(Io_Dir *dir)
   }
   return 0;
 }
-
-/*
- * Event loop
- *
- * backends: poll
- *
- *  NOTE(AABIB): have no idea how to implement it on windows ffs
- */
-
-/*
- * UTF-8
- *
- *
- */
-
-/*
- * NOTE(AABIB):
- */
 
 typedef unsigned int utf8_Rune;
 
